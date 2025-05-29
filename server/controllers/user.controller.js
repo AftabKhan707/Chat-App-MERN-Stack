@@ -37,23 +37,27 @@ export const register = asyncHandler(async (req, res, next) => {
     expiresIn: process.env.JWT_EXPIRES,
   });
 
-  res
-    .status(200)
-    .cookie("token", token, {
-      expires: new Date(
-        Date.now() + process.env.COOKIE_EXPIRES * 24 * 60 * 60 * 1000
-      ),
-      httpOnly: true,
-      secure: true,
-      sameSite: "None",
-    })
-    .json({
-      success: true,
-      responseData: {
-        newUser,
-        token,
-      },
-    });
+  // Cookie configuration for production
+  const cookieOptions = {
+    expires: new Date(
+      Date.now() + (process.env.COOKIE_EXPIRES || 7) * 24 * 60 * 60 * 1000
+    ),
+    httpOnly: true,
+  };
+
+  // Set secure and sameSite for production
+  if (process.env.NODE_ENV === "production") {
+    cookieOptions.secure = true;
+    cookieOptions.sameSite = "None";
+  }
+
+  res.status(200).cookie("token", token, cookieOptions).json({
+    success: true,
+    responseData: {
+      newUser,
+      token,
+    },
+  });
 });
 
 export const login = asyncHandler(async (req, res, next) => {
@@ -87,23 +91,27 @@ export const login = asyncHandler(async (req, res, next) => {
     expiresIn: process.env.JWT_EXPIRES,
   });
 
-  res
-    .status(200)
-    .cookie("token", token, {
-      expires: new Date(
-        Date.now() + process.env.COOKIE_EXPIRES * 24 * 60 * 60 * 1000
-      ),
-      httpOnly: true,
-      secure: true,
-      sameSite: "None",
-    })
-    .json({
-      success: true,
-      responseData: {
-        user,
-        token,
-      },
-    });
+  // Cookie configuration for production
+  const cookieOptions = {
+    expires: new Date(
+      Date.now() + (process.env.COOKIE_EXPIRES || 7) * 24 * 60 * 60 * 1000
+    ),
+    httpOnly: true,
+  };
+
+  // Set secure and sameSite for production
+  if (process.env.NODE_ENV === "production") {
+    cookieOptions.secure = true;
+    cookieOptions.sameSite = "None";
+  }
+
+  res.status(200).cookie("token", token, cookieOptions).json({
+    success: true,
+    responseData: {
+      user,
+      token,
+    },
+  });
 });
 
 export const getProfile = asyncHandler(async (req, res, next) => {
@@ -118,16 +126,22 @@ export const getProfile = asyncHandler(async (req, res, next) => {
 });
 
 export const logout = asyncHandler(async (req, res, next) => {
-  res
-    .status(200)
-    .cookie("token", "", {
-      expires: new Date(Date.now()),
-      httpOnly: true,
-    })
-    .json({
-      success: true,
-      message: "Logout successfull!",
-    });
+  // Cookie configuration for logout - must match login/register
+  const cookieOptions = {
+    expires: new Date(Date.now()),
+    httpOnly: true,
+  };
+
+  // Set secure and sameSite for production
+  if (process.env.NODE_ENV === "production") {
+    cookieOptions.secure = true;
+    cookieOptions.sameSite = "None";
+  }
+
+  res.status(200).cookie("token", "", cookieOptions).json({
+    success: true,
+    message: "Logout successfull!",
+  });
 });
 
 export const getOtherUsers = asyncHandler(async (req, res, next) => {
