@@ -46,6 +46,19 @@ const PORT = process.env.PORT || 5000;
 // routes
 import userRoute from "./routes/user.route.js";
 import messageRoute from "./routes/message.route.js";
+
+// Health check route for debugging
+app.get("/api/v1/health", (req, res) => {
+  res.json({
+    status: "OK",
+    environment: process.env.NODE_ENV,
+    hasJwtSecret: !!process.env.JWT_SECRET,
+    hasCookieExpires: !!process.env.COOKIE_EXPIRES,
+    clientUrl: process.env.CLIENT_URL,
+    timestamp: new Date().toISOString(),
+  });
+});
+
 app.use("/api/v1/user", userRoute);
 app.use("/api/v1/message", messageRoute);
 

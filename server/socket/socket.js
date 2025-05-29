@@ -11,7 +11,25 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "https://chat-app-mern-stack-3p3t.onrender.com",
+    origin: function (origin, callback) {
+      // Allow requests with no origin (mobile apps, etc.)
+      if (!origin) return callback(null, true);
+
+      // List of allowed origins
+      const allowedOrigins = [
+        process.env.CLIENT_URL,
+        "https://chat-app-mern-stack-3p3t.onrender.com",
+        "http://localhost:3000",
+        "http://localhost:5173",
+      ].filter(Boolean);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
   },
 });
 
