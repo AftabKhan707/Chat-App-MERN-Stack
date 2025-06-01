@@ -58,13 +58,110 @@ const Message = ({ messageDetails }) => {
   };
 
   const handleFileDownload = (fileUrl, originalName) => {
-    const link = document.createElement("a");
-    link.href = `${import.meta.env.VITE_SERVER_URL}${fileUrl}`;
-    link.download = originalName;
-    link.target = "_blank";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      // Get server URL with fallback
+      const serverUrl =
+        import.meta.env.VITE_SERVER_URL || "http://localhost:5000";
+      const downloadUrl = `${serverUrl}${fileUrl}?download=true`;
+
+      // Log the URL being used for debugging
+      console.log("Server URL from env:", import.meta.env.VITE_SERVER_URL);
+      console.log("Using server URL:", serverUrl);
+      console.log("Download URL:", downloadUrl);
+      console.log("Original filename:", originalName);
+      console.log("File URL path:", fileUrl);
+
+      // Use fetch to ensure complete download
+      console.log("Starting download:", originalName);
+
+      fetch(downloadUrl, {
+        method: "GET",
+        headers: {
+          Accept: "*/*",
+        },
+      })
+        .then((response) => {
+          console.log("Response status:", response.status);
+          console.log("Response headers:", [...response.headers.entries()]);
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          // Get the content length and content type
+          const contentLength = response.headers.get("content-length");
+          const contentType = response.headers.get("content-type");
+          console.log("Expected file size:", contentLength, "bytes");
+          console.log("Content type:", contentType);
+
+          return response.blob();
+        })
+        .then((blob) => {
+          console.log("Downloaded blob size:", blob.size, "bytes");
+          console.log("Downloaded blob type:", blob.type);
+
+          // Check if this looks like an error response (HTML instead of PDF)
+          if (blob.type.includes("text/html") || blob.size < 10000) {
+            // This is likely an error response, let's see what it says
+            return blob.text().then((text) => {
+              console.log("Server response content:", text);
+              throw new Error(
+                "Server returned HTML error page instead of PDF file"
+              );
+            });
+          }
+
+          // Verify the blob size matches expected size
+          if (blob.size === 0) {
+            throw new Error("Downloaded file is empty");
+          }
+
+          // Create blob URL and download
+          const blobUrl = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = blobUrl;
+          link.download = originalName;
+          link.style.display = "none";
+
+          // Add to DOM and trigger download
+          document.body.appendChild(link);
+          link.click();
+
+          // Clean up after download
+          setTimeout(() => {
+            if (document.body.contains(link)) {
+              document.body.removeChild(link);
+            }
+            window.URL.revokeObjectURL(blobUrl);
+          }, 1000);
+        })
+        .catch((error) => {
+          console.error("Fetch download failed:", error);
+
+          // Fallback to simple anchor method
+          const link = document.createElement("a");
+          link.href = downloadUrl;
+          link.download = originalName;
+          link.style.display = "none";
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+
+          document.body.appendChild(link);
+          link.click();
+
+          setTimeout(() => {
+            if (document.body.contains(link)) {
+              document.body.removeChild(link);
+            }
+          }, 2000);
+        });
+    } catch (error) {
+      console.error("File download failed:", error);
+      // Final fallback - open in new tab
+      const serverUrl =
+        import.meta.env.VITE_SERVER_URL || "http://localhost:5000";
+      window.open(`${serverUrl}${fileUrl}?download=true`, "_blank");
+    }
   };
 
   const renderFileMessage = () => {

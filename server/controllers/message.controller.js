@@ -3,9 +3,11 @@ import Conversation from "../models/conversation.model.js";
 import { asyncHandler } from "../utilities/asyncHandler.utility.js";
 import { errorHandler } from "../utilities/errorHandler.utility.js";
 import { getSocketId, io } from "../socket/socket.js";
+import { validateUploadedFile } from "../middlewares/fileUpload.middleware.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import fs from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -61,6 +63,17 @@ export const sendFileMessage = asyncHandler(async (req, res, next) => {
 
   if (!senderId || !receiverId) {
     return next(new errorHandler("Sender and receiver are required", 400));
+  }
+
+  try {
+    // Validate the uploaded file integrity
+    validateUploadedFile(req.file.path, req.file.mimetype);
+  } catch (error) {
+    // Delete the corrupted file
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    return next(new errorHandler(`File upload failed: ${error.message}`, 400));
   }
 
   let conversation = await Conversation.findOne({
