@@ -1,4 +1,4 @@
-# 💬 Gup-Shup Chat App
+# 💬 MERN  Chat App
 
 A modern, real-time chat application built with the MERN stack, featuring instant messaging, file sharing, and a beautiful responsive UI.
 
